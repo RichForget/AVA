@@ -322,6 +322,20 @@ ava::core::Error generic_transport_error(ava::process::ExitStatusV1 const* statu
   return error;
 }
 
+// Preserve only bounded, source-free launch metadata; never forward environment,
+// argv, paths, provider payloads, or arbitrary nested error messages.
+ava::core::Error launch_transport_error(std::string_view operation, ava::core::Error const& cause)
+{
+  auto error = generic_transport_error(nullptr, 0, 0);
+  error.with_context("operation", std::string(operation));
+  error.with_context("category", ava::core::to_string(cause.category()));
+  for (auto const& item : cause.context())
+    if ((item.key == "reason" || item.key == "stage" || item.key == "protocol" || item.key == "errno") && item.value.size() <= 64 &&
+        item.value.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_- ") == std::string::npos)
+      error.with_context(item.key, item.value);
+  return error;
+}
+
 ava::core::Error canceled_error()
 {
   return ava::core::Error(ava::core::ErrorCategory::Unknown, "transport request canceled");
@@ -391,10 +405,10 @@ class CurlRequest final
 
     auto operation = parent_scope_.operation();
     if (!operation)
-      return std::unexpected(generic_transport_error(nullptr, 0, 0));
+      return std::unexpected(launch_transport_error("operation", operation.error()));
     auto environment = ava::process::make_curl_environment_v1(operation->host_environment());
     if (!environment)
-      return std::unexpected(generic_transport_error(nullptr, 0, 0));
+      return std::unexpected(launch_transport_error("environment", environment.error()));
 
     std::optional<TempBodyFile> body_file;
     std::string body_path;
@@ -415,7 +429,7 @@ class CurlRequest final
     auto reservation = supervisor.reserve(operation->owner_prefix(), ava::process::ProcessRoleV1::Curl,
                                           {.termination_grace = 0ms, .startup_timeout = 2000ms, .execution_deadline = request_deadline_});
     if (!reservation)
-      return std::unexpected(generic_transport_error(nullptr, 0, 0));
+      return std::unexpected(launch_transport_error("reservation", reservation.error()));
 
     std::vector<std::string> arguments{"curl", "-q", "--config", "-", "--write-out", std::string(kWriteOut)};
     if (streaming_)
@@ -432,7 +446,7 @@ class CurlRequest final
                                                               .stdout_mode = ava::process::StreamModeV1::Capture,
                                                               .stderr_mode = ava::process::StreamModeV1::Capture});
     if (!spawned)
-      return std::unexpected(generic_transport_error(nullptr, 0, 0));
+      return std::unexpected(launch_transport_error("spawned", spawned.error()));
 
     if (!spawned->standard_input || !spawned->standard_output || !spawned->standard_error)
     {

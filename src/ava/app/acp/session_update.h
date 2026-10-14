@@ -4,10 +4,15 @@
 #include "ava/event/RuntimeEvent.h"
 #include "ava/core/result.h"
 
+#include <chrono>
+#include <condition_variable>
 #include <cstddef>
 #include <filesystem>
+#include <functional>
+#include <mutex>
 #include <optional>
 #include <string>
+#include <thread>
 #include <variant>
 #include <vector>
 
@@ -87,6 +92,7 @@ class RuntimeSessionUpdateMapper
   [[nodiscard]] ava::core::Result<std::vector<std::string>> map_coalesced_and_encode(ava::event::RuntimeEvent const& event);
   [[nodiscard]] ava::core::Result<std::vector<std::string>> flush_coalesced();
 
+  [[nodiscard]] bool has_pending_content() const noexcept { return pending_content_.has_value(); }
   [[nodiscard]] bool streamed_agent_text() const noexcept;
   [[nodiscard]] std::size_t update_count() const noexcept;
   [[nodiscard]] std::size_t encoded_bytes() const noexcept;
@@ -101,6 +107,30 @@ class RuntimeSessionUpdateMapper
   std::size_t update_count_ = 0;
   std::size_t encoded_bytes_ = 0;
   AVA_DEBUG_PRINT_MEMBERS_OPT_OUT
+};
+
+// One prompt owns one sleeping worker. The mutex orders mapping, timed flushes,
+// and sends; finish joins before the prompt response or mapper lifetime ends.
+class TimedSessionUpdates
+{
+ public:
+  using Sink = std::function<ava::core::VoidResult(std::string const&)>;
+  TimedSessionUpdates(RuntimeSessionUpdateMapperOptions options, Sink sink);
+  ~TimedSessionUpdates();
+  [[nodiscard]] ava::core::VoidResult submit(ava::event::RuntimeEvent const& event);
+  [[nodiscard]] ava::core::VoidResult finish();
+  AVA_DEBUG_PRINT_MEMBERS_OPT_OUT
+ private:
+  ava::core::VoidResult send(ava::core::Result<std::vector<std::string>> updates);
+  void run();
+  RuntimeSessionUpdateMapper mapper_;
+  Sink sink_;
+  std::mutex mutex_;
+  std::condition_variable wake_;
+  std::optional<std::chrono::steady_clock::time_point> deadline_;
+  std::optional<ava::core::Error> failure_;
+  bool stopping_ = false;
+  std::jthread worker_;
 };
 
 [[nodiscard]] ava::core::Result<std::string> encode_session_update(SessionUpdate const& update);
