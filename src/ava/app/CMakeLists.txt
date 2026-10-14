@@ -12,6 +12,7 @@ target_sources(ava_app
     "acp/service.cpp"
     "acp/session.cpp"
     "acp/session_update.cpp"
+    "acp/timed_session_updates.cpp"
     "acp/transport.cpp"
     "acp_mode.cpp"
     "app.cpp"
