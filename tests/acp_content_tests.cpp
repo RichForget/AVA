@@ -8,6 +8,7 @@
 #include "ava/app/acp/envelope_intent.h"
 #include "ava/app/acp/permission.h"
 #include "ava/app/acp/session_update.h"
+#include "ava/app/acp/timed_session_updates.h"
 #include "ava/app/acp/transport.h"
 #include "ava/agent/mode.h"
 #include "ava/permissions/permission.h"

@@ -2,6 +2,7 @@
 #include "ava/diagnostics/runtime_diagnostics.h"
 #include "ava/app/acp/client_tools.h"
 #include "ava/app/acp/session.h"
+#include "ava/app/acp/timed_session_updates.h"
 #include "ava/app/runtime_credentials.h"
 #include "ava/app/session_title_coordinator.h"
 #include "ava/app/subagent_delivery_manager.h"
