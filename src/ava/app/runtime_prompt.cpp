@@ -1,8 +1,8 @@
 #include "sys.h"
-#include "ava/session/run_stop.h"
 #ifdef CWDEBUG
 #include "ava/debug/debug_ostream_operators.h"
 #endif
+#include "ava/session/run_stop.h"
 #include "plugin_event_hooks.h"
 #include "runtime/ExtensionResourcePolicy.h"
 #include "runtime/Session.h"
