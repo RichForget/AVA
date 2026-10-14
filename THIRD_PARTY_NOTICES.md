@@ -118,7 +118,7 @@ https://curl.se/download/curl-8.22.0.tar.xz, SHA256
 Provenance: HTTPS upstream release artifact; no source from a fork.
 Purpose: process-owned HTTP requests for ACP, without an external curl child.
 libcurl is distributed under the curl license below. This experimental build
-also requires host OpenSSL 3.6.4 exactly (Apache-2.0); it is dynamically linked,
+also requires host OpenSSL 3.6.5 exactly (Apache-2.0); it is dynamically linked,
 not bundled. Public binary packaging/provenance qualification remains pending.
 
 COPYRIGHT AND PERMISSION NOTICE
@@ -144,9 +144,9 @@ Except as contained in this notice, the name of a copyright holder shall not
 be used in advertising or otherwise to promote the sale, use or other dealings
 in this Software without prior written authorization of the copyright holder.
 
-The reproducible CI TLS build downloads the official OpenSSL 3.6.4 artifact
-from `https://github.com/openssl/openssl/releases/download/openssl-3.6.4/openssl-3.6.4.tar.gz`,
-SHA256 `9bffaa1ad1e07b354c21bd3324ec02fa15579f45a7d0494b3e74bc449b7333ef`.
-This pins the tested local host version; it is not a claim that this is the latest
-security release. No real-provider/TLS qualification is claimed by the synthetic
-loopback gate. Upgrade/requalify TLS before enabling real credentials.
+The reproducible CI TLS build downloads the official OpenSSL 3.6.5 artifact
+from `https://github.com/openssl/openssl/releases/download/openssl-3.6.5/openssl-3.6.5.tar.gz`,
+SHA256 `a2157c2830efdec3788939b00c9b0638306d3f0bbb76dc4832ee503bb397df98`.
+This pins the security patch qualified by the synthetic loopback gate. Future
+security releases require requalification. No real-provider qualification is
+claimed, and real credentials remain outside the pilot gate.

@@ -137,6 +137,9 @@ ava::core::Result<HttpResponse> perform(HttpRequest const& request, Transport::B
   // bypassing an authority restriction a future caller may expect to be honored.
   if (!request.resolve_hosts.empty())
     return std::unexpected(error("ACP libcurl resolve overrides are unsupported"));
+  // Provider credentials and prompt bodies are bound to the configured URL.
+  // The ACP transport therefore never follows redirects, even when a provider
+  // retains the legacy curl-child redirect preference in its request object.
   std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> easy(curl_easy_init(), curl_easy_cleanup);
   std::unique_ptr<CURLM, decltype(&curl_multi_cleanup)> multi(curl_multi_init(), curl_multi_cleanup);
   if (!easy || !multi)
@@ -153,7 +156,7 @@ ava::core::Result<HttpResponse> perform(HttpRequest const& request, Transport::B
   }
   auto set = [&](CURLoption option, auto value) { return curl_easy_setopt(easy.get(), option, value) == CURLE_OK; };
   if (!set(CURLOPT_URL, request.url.c_str()) || !set(CURLOPT_CUSTOMREQUEST, request.method.c_str()) || !set(CURLOPT_PROTOCOLS_STR, "http,https") ||
-      !set(CURLOPT_REDIR_PROTOCOLS_STR, "http,https") || !set(CURLOPT_FOLLOWLOCATION, request.follow_redirects ? 1L : 0L) || !set(CURLOPT_MAXREDIRS, 5L) ||
+      !set(CURLOPT_REDIR_PROTOCOLS_STR, "https") || !set(CURLOPT_FOLLOWLOCATION, 0L) ||
       !set(CURLOPT_NOSIGNAL, 1L) || !set(CURLOPT_TIMEOUT_MS, long(std::max(1, request.timeout_ms))) || !set(CURLOPT_PROXY, "") ||
       !set(CURLOPT_SSL_VERIFYPEER, 1L) || !set(CURLOPT_SSL_VERIFYHOST, 2L) || !set(CURLOPT_HTTPHEADER, headers.value.get()) ||
       !set(CURLOPT_WRITEFUNCTION, body_callback) || !set(CURLOPT_WRITEDATA, &transfer) || !set(CURLOPT_HEADERFUNCTION, header_callback) ||

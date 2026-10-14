@@ -46,7 +46,7 @@ if(AVA_ACP_INPROCESS_HTTP)
   foreach(protocol DICT FILE FTP GOPHER IMAP LDAP LDAPS MQTT POP3 RTSP SMTP TELNET TFTP)
     set(CURL_DISABLE_${protocol} ON CACHE BOOL "" FORCE)
   endforeach()
-  find_package(OpenSSL 3.6.4 EXACT REQUIRED)
+  find_package(OpenSSL 3.6.5 EXACT REQUIRED)
   FetchContent_Declare(ava_libcurl
     URL https://curl.se/download/curl-8.22.0.tar.xz
     URL_HASH SHA256=f7ef3ae8a22e521f289803fe93543eb64c329b58aa73a9e224dfd915a2a5f4f7
