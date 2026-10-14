@@ -255,7 +255,7 @@ void test_gemini_sse_parsing_and_fake_transport()
     auto fake_response = transport.send(*request);
     auto parsed = fake_response ? provider.parse_response(*fake_response, false) : ava::core::Result<std::vector<ava::provider::StreamEvent>>{};
     expect(fake_response && parsed && parsed->size() == 2 && (*parsed)[0].text == "ok" && transport.requests().size() == 1 &&
-               transport.requests()[0].headers.at("x-goog-api-key") == "gemini-key",
+               transport.requests()[0].headers.at("x-goog-api-key") == "gemini-key" && !transport.requests()[0].follow_redirects,
            "Gemini provider works through fake transport without live credentials");
   }
 }

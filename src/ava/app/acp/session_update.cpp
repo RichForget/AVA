@@ -54,7 +54,8 @@ std::size_t utf8_chunk_prefix(std::string_view text, std::size_t max_bytes)
   auto boundary = std::min(text.size(), max_bytes);
   if (boundary == text.size())
     return boundary;
-  while (boundary > 0 && (static_cast<unsigned char>(text[boundary]) & 0xc0U) == 0x80U) --boundary;
+  while (boundary > 0 && (static_cast<unsigned char>(text[boundary]) & 0xc0U) == 0x80U)
+    --boundary;
   return boundary;
 }
 

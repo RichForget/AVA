@@ -2,6 +2,7 @@
 #include "ava/diagnostics/runtime_diagnostics.h"
 #include "ava/app/acp/client_tools.h"
 #include "ava/app/acp/session.h"
+#include "ava/app/acp/timed_session_updates.h"
 #include "ava/app/runtime_credentials.h"
 #include "ava/app/session_title_coordinator.h"
 #include "ava/app/subagent_delivery_manager.h"
@@ -600,21 +601,14 @@ RequestResult AcpSessionHost::prompt(AcpPromptContent content, std::stop_token s
                                        : std::function<ava::core::VoidResult()>{};
   run_options.image_attachments = std::move(image_attachments);
   run_options.expand_prompt_file_references = false;
-  RuntimeSessionUpdateMapper mapper(RuntimeSessionUpdateMapperOptions{.workspace_root = options_.launch_root, .message_id = request_id});
-  run_options.event_sink = [this, &mapper](ava::event::RuntimeEvent const& event) -> ava::core::VoidResult {
-    auto updates = mapper.map_coalesced_and_encode(event);
-    if (!updates)
-      return std::unexpected(std::move(updates.error()));
-    if (updates->empty())
-      return {};
-    auto gateway = options_.updates.lock();
-    if (!gateway)
-      return std::unexpected(protocol_error("ACP update gateway is unavailable"));
-    for (auto const& update : *updates)
-      if (auto sent = gateway->send(session_id_, update); !sent)
-        return sent;
-    return {};
-  };
+  TimedSessionUpdates updates(RuntimeSessionUpdateMapperOptions{.workspace_root = options_.launch_root, .message_id = request_id},
+                              [this](std::string const& update) -> ava::core::VoidResult {
+                                auto gateway = options_.updates.lock();
+                                if (!gateway)
+                                  return std::unexpected(protocol_error("ACP update gateway is unavailable"));
+                                return gateway->send(session_id_, update);
+                              });
+  run_options.event_sink = [&updates](ava::event::RuntimeEvent const& event) { return updates.submit(event); };
   auto caller_cancel = run_options.cancel_requested;
   run_options.cancel_requested = [this, prompt_cancel_generation, stop_token, caller_cancel] {
     bool canceled = false;
@@ -626,6 +620,9 @@ RequestResult AcpSessionHost::prompt(AcpPromptContent content, std::stop_token s
   };
 
   auto result = run_admitted_prompt(unlocked_session_, content.text, *bundle->provider, *bundle->transport, run_options, std::move(run_guard));
+  auto flushed = updates.finish();
+  if (!flushed)
+    return finish(std::unexpected(wire_error(flushed.error())));
   if (!result)
     return finish(std::unexpected(wire_error(result.error())));
   auto stop_reason = acp_stop_reason(result->outcome);
@@ -1031,14 +1028,17 @@ void AcpSessionRegistry::shutdown() noexcept
       return;
     closing_ = true;
     hosts.reserve(hosts_.size());
-    for (auto& [_, host] : hosts_) hosts.push_back(std::move(host));
+    for (auto& [_, host] : hosts_)
+      hosts.push_back(std::move(host));
     hosts_.clear();
     list_snapshots_.clear();
     list_snapshot_order_.clear();
     list_snapshot_bytes_ = 0;
   }
-  for (auto const& host : hosts) host->cancel();
-  for (auto const& host : hosts) static_cast<void>(host->close());
+  for (auto const& host : hosts)
+    host->cancel();
+  for (auto const& host : hosts)
+    static_cast<void>(host->close());
   if (options_.open_context.session_title_coordinator)
     options_.open_context.session_title_coordinator->shutdown();
   if (options_.open_context.subagent_delivery_manager)

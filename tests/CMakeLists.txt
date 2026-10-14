@@ -1001,6 +1001,13 @@ if(Python3_Interpreter_FOUND)
   set_tests_properties(ava_tests.curl_transport_static_contract PROPERTIES TIMEOUT 15)
 
   add_test(
+    NAME ava_tests.libcurl_transport_static_contract
+    COMMAND ${CMAKE_COMMAND}
+            -DAVA_LIBCURL_TRANSPORT_SOURCE=${CMAKE_SOURCE_DIR}/src/ava/http/libcurl_transport.cpp
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/libcurl_transport_static_contract.cmake)
+  set_tests_properties(ava_tests.libcurl_transport_static_contract PROPERTIES TIMEOUT 15)
+
+  add_test(
     NAME ava_tests.clipboard_image_static_contract
     COMMAND ${CMAKE_COMMAND}
             -DAVA_CLIPBOARD_IMAGE_SOURCE=${CMAKE_SOURCE_DIR}/src/ava/app/clipboard_image.cpp

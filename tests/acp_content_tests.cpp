@@ -8,6 +8,7 @@
 #include "ava/app/acp/envelope_intent.h"
 #include "ava/app/acp/permission.h"
 #include "ava/app/acp/session_update.h"
+#include "ava/app/acp/timed_session_updates.h"
 #include "ava/app/acp/transport.h"
 #include "ava/agent/mode.h"
 #include "ava/permissions/permission.h"
@@ -15,11 +16,14 @@
 
 #include <algorithm>
 #include <chrono>
+#include <condition_variable>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <iterator>
+#include <mutex>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <variant>
@@ -180,6 +184,36 @@ void test_acp_typed_session_update_mapper_ordering_and_limits()
   }
   expect(unicode_batch && unicode_flush && unicode_updates == 2 && reconstructed == unicode_text,
          "ACP stream coalescing preserves a multibyte UTF-8 code point that crosses the byte chunk boundary");
+  std::mutex timed_mutex;
+  std::condition_variable timed_wake;
+  std::vector<std::string> timed_text;
+  TimedSessionUpdates timed({.workspace_root = root, .message_id = "timed"}, [&](std::string const& update) -> ava::core::VoidResult {
+    std::lock_guard lock(timed_mutex);
+    if (auto content = ava::core::json::object_field(update, "content"))
+      timed_text.push_back(ava::core::json::string_field(*content, "text").value_or(""));
+    timed_wake.notify_one();
+    return {};
+  });
+  auto submitted = timed.submit(message_update("short €"));
+  bool early = false;
+  {
+    std::unique_lock lock(timed_mutex);
+    early = timed_wake.wait_for(lock, std::chrono::seconds(2), [&] { return !timed_text.empty(); });
+  }
+  auto tail = timed.submit(message_update(" tail"));
+  auto finished = timed.finish();
+  auto closed = timed.submit(message_update("late"));
+  expect(submitted && early && tail && finished && !closed && timed_text.size() == 2 && timed_text[0] == "short €" && timed_text[1] == " tail",
+         "ACP timed stream flushes short UTF-8 text before completion, drains final tail once and rejects late updates");
+  TimedSessionUpdates failed({.workspace_root = root, .message_id = "failed"}, [](std::string const&) -> ava::core::VoidResult {
+    return std::unexpected(ava::core::Error(ava::core::ErrorCategory::Io, "synthetic send failure"));
+  });
+  auto buffered = failed.submit(message_update("pending"));
+  expect(buffered && !failed.finish(), "ACP final flush propagates failed sends instead of claiming completion");
+  TimedSessionUpdates throwing({.workspace_root = root, .message_id = "throwing"},
+                               [](std::string const&) -> ava::core::VoidResult { throw std::runtime_error("synthetic callback exception"); });
+  auto accepted = throwing.submit(message_update("pending"));
+  expect(accepted && !throwing.finish(), "ACP consumer exceptions become errors and cannot escape prompt teardown");
 }
 
 void test_acp_permission_dtos_show_bounded_actions()

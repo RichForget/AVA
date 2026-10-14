@@ -1,5 +1,8 @@
 #include "sys.h"
 #include "ava/http/curl_transport.h"
+#if defined(AVA_ACP_INPROCESS_HTTP)
+#include "ava/http/libcurl_transport.h"
+#endif
 #include "ava/app/runtime/Session.h"
 #include "ava/app/runtime_credentials.h"
 #include "ava/config/auth.h"
@@ -135,7 +138,14 @@ ava::core::Result<RuntimeProviderRunBundle> create_runtime_provider_run_bundle(r
     return std::unexpected(ava::core::Error(ava::core::ErrorCategory::Configuration, "runtime provider process authority is unavailable"));
   }
   auto const session_process_scope = *session_r->session_process_scope();
-  auto auth_transport = std::make_unique<ava::http::CurlCliTransport>(session_process_scope);
+  auto make_transport = [&]() -> std::unique_ptr<ava::http::Transport> {
+#if defined(AVA_ACP_INPROCESS_HTTP)
+    if (purpose == "ACP prompt")
+      return std::make_unique<ava::http::LibcurlTransport>();
+#endif
+    return std::make_unique<ava::http::CurlCliTransport>(session_process_scope);
+  };
+  auto auth_transport = make_transport();
   auto catalog = session_r->provider_catalog();
   if (!catalog)
   {
@@ -157,7 +167,7 @@ ava::core::Result<RuntimeProviderRunBundle> create_runtime_provider_run_bundle(r
     return std::unexpected(std::move(provider.error()));
   CRITICAL_AREA_END_R(session);
 
-  std::unique_ptr<ava::http::Transport> transport = std::make_unique<ava::http::CurlCliTransport>(session_process_scope);
+  auto transport = make_transport();
   return RuntimeProviderRunBundle{
       .provider = std::move(*provider), .transport = std::move(transport), .auth_transport = std::move(auth_transport), .options = std::move(*prepared)};
 }

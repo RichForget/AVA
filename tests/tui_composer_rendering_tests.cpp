@@ -207,7 +207,9 @@ bool test_changed_session_snapshot_resets_presentation()
   presentation.snapshot.input_selection_end = 3;
   presentation.snapshot.transcript_selection_anchor_item = 0;
   presentation.snapshot.transcript_selection_focus_item = 1;
-  presentation.snapshot.command_output = ava::tui::CommandOutputView{.title_token = "/read", .blocks = {"old local output"}};
+  presentation.snapshot.command_output.emplace();
+  presentation.snapshot.command_output->title_token = "/read";
+  presentation.snapshot.command_output->blocks = {"old local output"};
   presentation.snapshot.local_command_feedback = "old local status";
   presentation.snapshot.tool_index = {ava::tui::TuiToolIndexEntry{
       .tool = ava::tui::ToolTimelineItem{.status = ava::tui::ToolTimelineStatus::Success, .name = "read", .call_id = "old-local-tool"},

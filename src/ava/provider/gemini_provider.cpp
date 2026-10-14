@@ -572,7 +572,7 @@ ava::core::Result<ava::http::HttpRequest> GeminiProvider::build_request(Provider
                                             {"Accept", request.stream ? "text/event-stream" : "application/json"}},
                                 .body = std::move(*body),
                                 .timeout_ms = 60000,
-                                .follow_redirects = true,
+                                .follow_redirects = false,
                                 .include_response_headers = false,
                                 .resolve_hosts = {}};
 }

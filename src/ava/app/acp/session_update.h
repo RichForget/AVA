@@ -87,6 +87,7 @@ class RuntimeSessionUpdateMapper
   [[nodiscard]] ava::core::Result<std::vector<std::string>> map_coalesced_and_encode(ava::event::RuntimeEvent const& event);
   [[nodiscard]] ava::core::Result<std::vector<std::string>> flush_coalesced();
 
+  [[nodiscard]] bool has_pending_content() const noexcept { return pending_content_.has_value(); }
   [[nodiscard]] bool streamed_agent_text() const noexcept;
   [[nodiscard]] std::size_t update_count() const noexcept;
   [[nodiscard]] std::size_t encoded_bytes() const noexcept;

@@ -40,7 +40,7 @@ struct ToolExecutionOptions
   // with a fresh application/session/run hierarchy before publication.
   std::optional<ava::process::ProcessScopeV1> process_scope = std::nullopt;
   std::shared_ptr<ava::tools::EditHistory> edit_history = nullptr;
-  std::string edit_turn_id;
+  std::string edit_turn_id = {};
   std::shared_ptr<ava::permissions::CommandAutonomyState> command_autonomy = nullptr;
   ava::permissions::CommandPolicyReader command_policy_reader = nullptr;
 

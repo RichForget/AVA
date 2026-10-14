@@ -1,5 +1,4 @@
 #include "sys.h"
-#include "ava/session/run_stop.h"
 #ifdef CWDEBUG
 #include "ava/debug/debug_ostream_operators.h"
 #endif
@@ -20,6 +19,7 @@
 #include "ava/http/curl_transport.h"
 #include "ava/agent/agent_loop_session.h"
 #include "ava/agent/subagent_config.h"
+#include "ava/session/run_stop.h"
 #include "ava/session/session_store.h"
 #include "ava/permissions/permission_rules.h"
 #include "ava/provider/catalog.h"

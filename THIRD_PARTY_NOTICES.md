@@ -109,3 +109,44 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Experimental ACP libcurl build (disabled by default)
+
+`AVA_ACP_INPROCESS_HTTP=ON` compiles official curl 8.22.0 source from
+https://curl.se/download/curl-8.22.0.tar.xz, SHA256
+`f7ef3ae8a22e521f289803fe93543eb64c329b58aa73a9e224dfd915a2a5f4f7`.
+Provenance: HTTPS upstream release artifact; no source from a fork.
+Purpose: process-owned HTTP requests for ACP, without an external curl child.
+libcurl is distributed under the curl license below. This experimental build
+also requires host OpenSSL 3.6.5 exactly (Apache-2.0); it is dynamically linked,
+not bundled. Public binary packaging/provenance qualification remains pending.
+
+COPYRIGHT AND PERMISSION NOTICE
+
+Copyright (c) 1996 - 2026, Daniel Stenberg, <daniel@haxx.se>, and many
+contributors, see the THANKS file.
+
+All rights reserved.
+
+Permission to use, copy, modify, and distribute this software for any purpose
+with or without fee is hereby granted, provided that the above copyright
+notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN
+NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+OR OTHER DEALINGS IN THE SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall not
+be used in advertising or otherwise to promote the sale, use or other dealings
+in this Software without prior written authorization of the copyright holder.
+
+The reproducible CI TLS build downloads the official OpenSSL 3.6.5 artifact
+from `https://github.com/openssl/openssl/releases/download/openssl-3.6.5/openssl-3.6.5.tar.gz`,
+SHA256 `a2157c2830efdec3788939b00c9b0638306d3f0bbb76dc4832ee503bb397df98`.
+This pins the security patch qualified by the synthetic loopback gate. Future
+security releases require requalification. No real-provider qualification is
+claimed, and real credentials remain outside the pilot gate.

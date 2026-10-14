@@ -152,7 +152,7 @@ struct ToolContext
   std::shared_ptr<MutationQueue> mutation_queue = nullptr;
   // Session journal is shared only by workers in the same native editing turn.
   std::shared_ptr<EditHistory> edit_history = nullptr;
-  std::string edit_turn_id;
+  std::string edit_turn_id = {};
   // Shared mode epoch is owned by the frontend; policy reader reloads native
   // rule storage. Neither callback may be supplied by model tool arguments.
   std::shared_ptr<ava::permissions::CommandAutonomyState> command_autonomy = nullptr;

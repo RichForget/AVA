@@ -84,7 +84,7 @@ class BootstrapSubmoduleContractTests(unittest.TestCase):
                 self.assertEqual(config[section].get("update"), "checkout")
         memory = config['submodule "memory"']
         self.assertEqual(memory["path"], "memory")
-        self.assertEqual(memory["url"], "https://github.com/CarloWood/memory.git")
+        self.assertEqual(memory["url"], "https://github.com/RichForget/memory.git")
 
 
 if __name__ == "__main__":
